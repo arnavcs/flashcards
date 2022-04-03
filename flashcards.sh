@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="1.0.0"
+version="0.1.0"
 store_dir="${HOME}/.local/share/flashcards"
 dependencies=("mkdir" "echo" "touch")
 git_source=""
