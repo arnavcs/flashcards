@@ -5,6 +5,32 @@ store_dir="${HOME}/.local/share/flashcards"
 dependencies=("mkdir" "echo" "touch")
 git_source="https://raw.githubusercontent.com/arnavcs/flashcards/main/flashcards"
 
+######################
+# AUXILARY FUNCTIONS #
+######################
+
+print_help () {
+    while IFS= read -r line
+    do
+        printf "%s\n" "$line"
+    done <<-EOF
+
+Usage:
+    ${0##*/} [-s <set>] -w <word> -m <meaning>
+    ${0##*/} [-s <set>] -r
+    ${0##*/} -h | -U | -V
+
+Options:
+    -s the flashcard set to be used ('default' if unspecified)
+    -w the word to be added to the flashcard set
+    -m the meaning of the word to be added to the set
+    -r get a random word and meaning pair from the set
+    -h show help text and exit
+    -U fetch an update from github and exit
+    -V print the version number and exit
+EOF
+}
+
 #############
 # FUNCTIONS #
 #############
@@ -48,3 +74,5 @@ while getopts "s:rw:m:d" flag; do
            exit 1 ;;
     esac
 done
+
+
