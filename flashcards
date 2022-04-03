@@ -2,14 +2,14 @@
 
 version="0.1.0"
 store_dir="${HOME}/.local/share/flashcards"
-dependencies=("mkdir" "echo" "touch")
+dependencies=("mkdir" "echo" "touch" "read" "printf" "shuf")
 git_source="https://raw.githubusercontent.com/arnavcs/flashcards/main/flashcards"
 
 ######################
 # AUXILARY FUNCTIONS #
 ######################
 
-print_help () {
+help_text () {
     while IFS= read -r line
     do
         printf "%s\n" "$line"
@@ -31,11 +31,20 @@ Options:
 EOF
 }
 
-#############
-# FUNCTIONS #
-#############
+version_text () {
+    echo "Version: $version"
+}
 
-check_file () {
+die () {
+    echo "$*"
+    exit 1
+}
+
+####################
+# INPUT SANITATION #
+####################
+
+set_sanitation () {
     if [ ! -d $store_dir ]
     then
         mkdir $store_dir
@@ -43,7 +52,6 @@ check_file () {
 
     if [ -z $word_set ]
     then
-        echo "Using set 'default'"
         word_set="default"
     fi
 
@@ -51,6 +59,33 @@ check_file () {
     then
         touch $store_dir/$word_set.txt
     fi
+}
+
+check_input_validity () {
+    if [ $random = "true" ]
+    then
+        if [ ! -z $word ] || [ ! -z $meaning ]
+        then
+            die "can't use -r with -w or -m"
+        fi
+    else
+        if [ -z $word ] || [ -z $meaning ]
+        then
+            die "specify both -w and -m"
+        fi
+    fi
+}
+
+########################
+# FLASHCARD OPERATIONS #
+########################
+
+get_random_flashcard () {
+    cat $store_dir/$word_set.txt | shuf -n 1
+}
+
+add_flashcard () {
+    echo "$word | $meaning" >> $store_dir/$word_set.txt
 }
 
 ############
@@ -61,18 +96,27 @@ word_set=""
 random="false"
 word=""
 meaning=""
-delete="false"
 
-while getopts "s:rw:m:d" flag; do
+while getopts "s:w:m:rhUV" flag; do
     case "${flag}" in
         s) word_set="${OPTARG}" ;;
-        r) random="true" ;;
         w) word="${OPTARG}" ;;
         m) meaning="${OPTARG}" ;;
-        d) delete="true" ;;
-        *) print_help
+        r) random="true" ;;
+        h) help_text
+           exit 0 ;;
+        V) version_text
+           exit 0 ;;
+        *) help_text
            exit 1 ;;
     esac
 done
 
-
+set_sanitation
+check_input_validity
+if [ $random = "false" ]
+then
+    add_flashcard
+else
+    get_random_flashcard
+fi
