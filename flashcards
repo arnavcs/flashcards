@@ -3,7 +3,7 @@
 version="1.0.0"
 store_dir="${HOME}/.local/share/flashcards"
 dependencies=("mkdir" "echo" "touch")
-git_source=""
+git_source="https://raw.githubusercontent.com/arnavcs/flashcards/main/flashcards"
 
 #############
 # FUNCTIONS #
