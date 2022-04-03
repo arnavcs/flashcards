@@ -1,0 +1,50 @@
+#!/bin/bash
+
+version="1.0.0"
+store_dir="${HOME}/.local/share/flashcards"
+dependencies=("mkdir" "echo" "touch")
+git_source=""
+
+#############
+# FUNCTIONS #
+#############
+
+check_file () {
+    if [ ! -d $store_dir ]
+    then
+        mkdir $store_dir
+    fi
+
+    if [ -z $word_set ]
+    then
+        echo "Using set 'default'"
+        word_set="default"
+    fi
+
+    if [ ! -e $store_dir/$word_set.txt ]
+    then
+        touch $store_dir/$word_set.txt
+    fi
+}
+
+############
+# START UP #
+############
+
+word_set=""
+random="false"
+word=""
+meaning=""
+delete="false"
+
+while getopts "s:rw:m:d" flag; do
+    case "${flag}" in
+        s) word_set="${OPTARG}" ;;
+        r) random="true" ;;
+        w) word="${OPTARG}" ;;
+        m) meaning="${OPTARG}" ;;
+        d) delete="true" ;;
+        *) print_help
+           exit 1 ;;
+    esac
+done
