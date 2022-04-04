@@ -31,6 +31,19 @@ Options:
 EOF
 }
 
+update_script () {
+    update="$(curl -s "$git_source" | diff -u "$0" -)"
+    if [ -z $update ]; then
+        echo "the script is up to date"
+    else
+        if printf '%s\n' "$update" | patch "$0" - ; then
+            echo "the script has been updated"
+        else
+            echo "can't update the script"
+        fi
+    fi
+}
+
 version_text () {
     echo "Version: $version"
 }
@@ -44,33 +57,19 @@ die () {
 # INPUT SANITATION #
 ####################
 
-set_sanitation () {
-    if [ ! -d $store_dir ]
-    then
-        mkdir $store_dir
-    fi
-
-    if [ -z $word_set ]
-    then
-        word_set="default"
-    fi
-
-    if [ ! -e $store_dir/$word_set.txt ]
-    then
-        touch $store_dir/$word_set.txt
-    fi
+word_set_sanitation () {
+    [ ! -d $store_dir ] && mkdir $store_dir
+    [ -z $word_set ] && word_set="default"
+    [ ! -e $store_dir/$word_set.txt ] && touch $store_dir/$word_set.txt
 }
 
 check_input_validity () {
-    if [ $random = "true" ]
-    then
-        if [ ! -z $word ] || [ ! -z $meaning ]
-        then
+    if [ $random = "true" ]; then
+        if [ ! -z $word ] || [ ! -z $meaning ]; then
             die "can't use -r with -w or -m"
         fi
     else
-        if [ -z $word ] || [ -z $meaning ]
-        then
+        if [ -z $word ] || [ -z $meaning ]; then
             die "specify both -w and -m"
         fi
     fi
@@ -105,6 +104,8 @@ while getopts "s:w:m:rhUV" flag; do
         r) random="true" ;;
         h) help_text
            exit 0 ;;
+        U) update_script
+           exit 0 ;;
         V) version_text
            exit 0 ;;
         *) help_text
@@ -112,7 +113,7 @@ while getopts "s:w:m:rhUV" flag; do
     esac
 done
 
-set_sanitation
+word_set_sanitation
 check_input_validity
 if [ $random = "false" ]
 then
