@@ -1,8 +1,8 @@
 #!/bin/bash
 
-version="0.1.0"
+version="0.2.0"
 store_dir="${HOME}/.local/share/flashcards"
-dependencies=("mkdir" "echo" "touch" "read" "printf" "shuf")
+dependencies=("mkdir" "echo" "touch" "read" "printf" "shuf" "awk")
 git_source="https://raw.githubusercontent.com/arnavcs/flashcards/main/flashcards"
 
 ######################
@@ -16,18 +16,21 @@ help_text () {
     done <<-EOF
 
 Usage:
-    ${0##*/} [-s <set>] -w <word> -m <meaning>
-    ${0##*/} [-s <set>] -r
+    ${0##*/} [-s <set>] [-w <word>] [-m <meaning>]
     ${0##*/} -h | -U | -V
 
 Options:
     -s the flashcard set to be used ('default' if unspecified)
-    -w the word to be added to the flashcard set
-    -m the meaning of the word to be added to the set
-    -r get a random word and meaning pair from the set
+    -w the word
+    -m the meaning
     -h show help text and exit
     -U fetch an update from github and exit
     -V print the version number and exit
+
+Notes:
+    If both the word and meaning are specified, a new flashcard will be added to the set.
+    If only one of the word and meaning are specified, a matching flashcard will be searched for in the set.
+    If neither are specified, a random flashcard will be displayed from the set.
 EOF
 }
 
@@ -48,30 +51,25 @@ version_text () {
     echo "Version: $version"
 }
 
-die () {
-    echo "$*"
-    exit 1
-}
+##################
+# INPUT HANDLING #
+##################
 
-####################
-# INPUT SANITATION #
-####################
-
-word_set_sanitation () {
+get_word_set () {
     [ ! -d $store_dir ] && mkdir $store_dir
     [ -z $word_set ] && word_set="default"
     [ ! -e $store_dir/$word_set.txt ] && touch $store_dir/$word_set.txt
 }
 
-check_input_validity () {
-    if [ $random = "true" ]; then
-        if [ ! -z $word ] || [ ! -z $meaning ]; then
-            die "can't use -r with -w or -m"
-        fi
+handle_input () {
+    if [ -z $word ] && [ -z $meaning ]; then
+        get_random_flashcard
+    elif [ -z $word ]; then
+        get_word
+    elif [ -z $meaning ]; then
+        get_meaning
     else
-        if [ -z $word ] || [ -z $meaning ]; then
-            die "specify both -w and -m"
-        fi
+        add_flashcard
     fi
 }
 
@@ -80,11 +78,19 @@ check_input_validity () {
 ########################
 
 get_random_flashcard () {
-    cat $store_dir/$word_set.txt | shuf -n 1
+    shuf -n 1 $store_dir/$word_set.txt
+}
+
+get_meaning () {
+    awk -F "|" -v w="$word" '$1 == w {print $2}' $store_dir/$word_set.txt
+}
+
+get_word () {
+    awk -F "|" -v m="$meaning" '$2 == m {print $1}' $store_dir/$word_set.txt
 }
 
 add_flashcard () {
-    echo "$word | $meaning" >> $store_dir/$word_set.txt
+    echo "$word|$meaning" >> $store_dir/$word_set.txt
 }
 
 ############
@@ -92,7 +98,6 @@ add_flashcard () {
 ############
 
 word_set=""
-random="false"
 word=""
 meaning=""
 
@@ -101,7 +106,6 @@ while getopts "s:w:m:rhUV" flag; do
         s) word_set="${OPTARG}" ;;
         w) word="${OPTARG}" ;;
         m) meaning="${OPTARG}" ;;
-        r) random="true" ;;
         h) help_text
            exit 0 ;;
         U) update_script
@@ -113,11 +117,5 @@ while getopts "s:w:m:rhUV" flag; do
     esac
 done
 
-word_set_sanitation
-check_input_validity
-if [ $random = "false" ]
-then
-    add_flashcard
-else
-    get_random_flashcard
-fi
+get_word_set
+handle_input
