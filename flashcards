@@ -62,11 +62,11 @@ get_word_set () {
 }
 
 handle_input () {
-    if [ -z $word ] && [ -z $meaning ]; then
+    if [ -z "$word" ] && [ -z "$meaning" ]; then
         get_random_flashcard
-    elif [ -z $word ]; then
+    elif [ -z "$word" ]; then
         get_word
-    elif [ -z $meaning ]; then
+    elif [ -z "$meaning" ]; then
         get_meaning
     else
         add_flashcard
